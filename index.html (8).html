@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Reflection</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --black:#070707;--white:#F5F0E8;--gold:#C8A84B;
+  --g2:#181818;--g3:#222;--g4:#2C2C2C;
+  --dim:#666;--text:#9A968F;
+}
+body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;font-weight:300;line-height:1.7;min-height:100vh;}
+
+/* LOADING */
+#ls{position:fixed;inset:0;background:var(--black);z-index:9999;display:flex;align-items:center;justify-content:center;}
+.ls-t{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.5em;color:var(--gold);text-transform:uppercase;}
+
+/* AUTH */
+#au{display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;}
+.ab{width:100%;max-width:380px;}
+.a-logo{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.5em;color:var(--gold);text-transform:uppercase;margin-bottom:32px;}
+.a-title{font-family:'DM Serif Display',serif;font-size:42px;line-height:1;margin-bottom:6px;}
+.a-title span{color:var(--gold);}
+.a-sub{font-size:13px;color:var(--dim);margin-bottom:32px;}
+.a-tabs{display:flex;gap:2px;margin-bottom:24px;}
+.a-tab{flex:1;padding:10px;background:var(--g2);border:none;color:var(--dim);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.3em;text-transform:uppercase;cursor:pointer;}
+.a-tab.on{background:var(--gold);color:var(--black);}
+.a-in{width:100%;background:var(--g2);border:none;border-bottom:1px solid var(--g4);color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;padding:13px;outline:none;transition:border-color 0.2s;box-sizing:border-box;margin-bottom:8px;display:block;}
+.a-in:focus{border-bottom-color:var(--gold);}
+.a-in::placeholder{color:var(--dim);}
+.a-btn{width:100%;padding:15px;background:var(--gold);border:none;color:var(--black);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.4em;text-transform:uppercase;cursor:pointer;margin-top:4px;}
+.a-err{font-size:12px;color:#e05555;margin-top:8px;min-height:16px;font-style:italic;}
+.a-ok{font-size:12px;color:var(--gold);margin-top:6px;font-style:italic;}
+.a-fg{font-size:11px;color:var(--dim);text-align:right;margin-top:4px;cursor:pointer;text-decoration:underline;}
+
+/* APP */
+#app{display:none;}
+nav{background:rgba(7,7,7,0.97);border-bottom:1px solid var(--g3);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;}
+.n-brand{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.4em;color:var(--gold);text-transform:uppercase;}
+.n-right{display:flex;align-items:center;gap:12px;}
+.n-coach{background:var(--gold);color:var(--black);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;padding:5px 12px;border:none;cursor:pointer;}
+.n-so{background:none;border:none;color:var(--dim);font-family:'DM Mono',monospace;font-size:9px;cursor:pointer;}
+
+.wrap{max-width:680px;margin:0 auto;padding:32px 20px 100px;}
+
+/* GOAL CARD */
+.goal-card{background:var(--g2);padding:24px;margin-bottom:28px;border-left:2px solid var(--gold);}
+.gc-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.4em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+.gc-goal{font-family:'DM Serif Display',serif;font-size:22px;color:var(--white);margin-bottom:8px;line-height:1.2;}
+.gc-why{font-size:13px;color:var(--text);line-height:1.8;font-style:italic;}
+.gc-edit{font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);text-decoration:underline;cursor:pointer;margin-top:10px;display:inline-block;}
+.gc-edit:hover{color:var(--gold);}
+
+/* GOAL SETUP */
+.goal-setup{background:var(--g2);padding:28px;margin-bottom:28px;}
+.gs-title{font-family:'DM Serif Display',serif;font-size:24px;color:var(--white);margin-bottom:6px;}
+.gs-sub{font-size:13px;color:var(--dim);margin-bottom:24px;}
+.gs-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;display:block;}
+.gs-in{width:100%;background:var(--g3);border:none;border-bottom:1px solid var(--g4);color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;padding:14px;outline:none;transition:border-color 0.2s;box-sizing:border-box;margin-bottom:16px;resize:none;}
+.gs-in:focus{border-bottom-color:var(--gold);}
+.gs-in::placeholder{color:var(--dim);}
+.gs-btn{background:var(--gold);border:none;color:var(--black);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.4em;text-transform:uppercase;padding:14px 28px;cursor:pointer;}
+
+/* REFLECTION FORM */
+.week-header{margin-bottom:24px;}
+.wh-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.5em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+.wh-title{font-family:'DM Serif Display',serif;font-size:32px;color:var(--white);line-height:1;}
+
+.field{margin-bottom:20px;}
+.f-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;display:block;}
+.f-hint{font-size:12px;color:var(--dim);margin-bottom:8px;font-style:italic;}
+.f-ta{width:100%;background:var(--g2);border:none;border-bottom:1px solid var(--g4);color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;padding:14px;resize:vertical;outline:none;line-height:1.8;transition:border-color 0.2s;box-sizing:border-box;min-height:90px;}
+.f-ta:focus{border-bottom-color:var(--gold);}
+.f-ta::placeholder{color:var(--dim);}
+
+/* SCORE */
+.score-wrap{margin-bottom:24px;}
+.score-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;display:block;}
+.score-btns{display:flex;gap:3px;}
+.s-btn{flex:1;aspect-ratio:1;background:var(--g2);border:none;color:var(--dim);font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;transition:all 0.15s;}
+.s-btn:hover{background:var(--g3);color:var(--white);}
+.s-btn.sel{background:var(--gold);color:var(--black);}
+
+/* SUBMIT */
+.submit-btn{width:100%;padding:18px;background:var(--gold);border:none;color:var(--black);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.4em;text-transform:uppercase;cursor:pointer;margin-top:8px;transition:all 0.2s;}
+.submit-btn:hover{background:var(--white);}
+.submit-btn:disabled{background:var(--g3);color:var(--dim);cursor:not-allowed;}
+
+/* AI RESPONSE */
+.ai-response{background:var(--g2);padding:32px;margin-top:24px;border-top:2px solid var(--gold);display:none;}
+.air-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.5em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
+.air-text{font-size:15px;color:var(--white);line-height:2.0;white-space:pre-wrap;}
+.air-save{font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);margin-top:16px;opacity:0;transition:opacity 0.3s;}
+.air-save.show{opacity:1;}
+
+/* PAST REFLECTIONS */
+.past-section{margin-top:48px;}
+.ps-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.5em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--g3);}
+.past-item{background:var(--g2);padding:20px;margin-bottom:4px;cursor:pointer;transition:background 0.15s;}
+.past-item:hover{background:var(--g3);}
+.pi-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.pi-date{font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:0.2em;}
+.pi-score{font-family:'DM Serif Display',serif;font-size:22px;color:var(--gold);}
+.pi-preview{font-size:13px;color:var(--text);line-height:1.5;}
+.past-detail{display:none;background:var(--g3);padding:20px;margin-top:2px;margin-bottom:4px;}
+.pd-field{margin-bottom:16px;}
+.pd-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;}
+.pd-val{font-size:13px;color:var(--text);line-height:1.7;}
+.pd-ai{background:var(--g2);padding:16px;margin-top:12px;border-left:2px solid var(--gold);}
+.pd-ai-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+.pd-ai-text{font-size:13px;color:var(--white);line-height:1.9;white-space:pre-wrap;}
+
+/* COACH DASHBOARD */
+#dashboard{display:none;}
+.dash-wrap{max-width:900px;margin:0 auto;padding:32px 20px 100px;}
+.dash-title{font-family:'DM Serif Display',serif;font-size:36px;color:var(--white);margin-bottom:8px;}
+.dash-sub{font-size:13px;color:var(--dim);margin-bottom:32px;}
+.member-card{background:var(--g2);margin-bottom:4px;}
+.mc-header{padding:16px 20px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+.mc-av{width:36px;height:36px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:16px;color:var(--black);flex-shrink:0;}
+.mc-info{flex:1;}
+.mc-name{font-size:15px;font-weight:400;color:var(--white);}
+.mc-meta{font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px;}
+.mc-score{font-family:'DM Serif Display',serif;font-size:28px;color:var(--gold);}
+.mc-entries{display:none;padding:0 20px 16px;}
+.entry-row{background:var(--g3);padding:14px 16px;margin-bottom:2px;}
+.er-top{display:flex;justify-content:space-between;margin-bottom:8px;}
+.er-date{font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);}
+.er-score{font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);}
+.er-field{margin-bottom:8px;}
+.er-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.25em;text-transform:uppercase;color:var(--gold);margin-bottom:2px;}
+.er-val{font-size:13px;color:var(--text);line-height:1.6;}
+.er-ai{background:var(--g2);padding:12px;margin-top:8px;border-left:1px solid var(--gold);}
+.er-ai-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
+.er-ai-txt{font-size:12px;color:var(--white);line-height:1.8;white-space:pre-wrap;}
+
+/* LOADING SPINNER */
+.spin-wrap{display:flex;align-items:center;justify-content:center;gap:8px;padding:24px 0;}
+.spin-dot{width:8px;height:8px;background:var(--gold);animation:pulse 1.2s ease-in-out infinite;}
+.spin-dot:nth-child(2){animation-delay:0.2s;}
+.spin-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes pulse{0%,100%{opacity:0.2;transform:scale(0.8);}50%{opacity:1;transform:scale(1);}}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--g2);border:1px solid var(--gold);color:var(--white);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;padding:10px 20px;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+
+@media(max-width:600px){
+  .wrap,.dash-wrap{padding:24px 14px 80px;}
+  .score-btns .s-btn{font-size:11px;}
+}
+</style>
+</head>
+<body>
+
+<div id="ls"><div class="ls-t">Loading...</div></div>
+
+<!-- AUTH -->
+<div id="au" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;">
+  <div class="ab">
+    <div class="a-logo">Group Coaching</div>
+    <div class="a-title">Weekly <span>Reflection.</span></div>
+    <div class="a-sub">Sign in to access your reflection tool.</div>
+    <div class="a-tabs">
+      <button class="a-tab on" id="t-si" onclick="swTab('si')">Sign In</button>
+      <button class="a-tab" id="t-su" onclick="swTab('su')">Create Account</button>
+    </div>
+    <div id="f-si">
+      <input class="a-in" id="si-e" type="email" placeholder="Email address"/>
+      <input class="a-in" id="si-p" type="password" placeholder="Password"/>
+      <div class="a-fg" onclick="rpw()">Forgot password?</div>
+      <button class="a-btn" onclick="dsi()">Sign In</button>
+    </div>
+    <div id="f-su" style="display:none">
+      <input class="a-in" id="su-n" type="text" placeholder="Your first name" maxlength="30"/>
+      <input class="a-in" id="su-e" type="email" placeholder="Email address"/>
+      <input class="a-in" id="su-p" type="password" placeholder="Password (min 6 characters)"/>
+      <button class="a-btn" onclick="dsu()">Create Account</button>
+    </div>
+    <div class="a-err" id="aerr"></div>
+    <div class="a-ok" id="aok"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <nav>
+    <div class="n-brand">Weekly Reflection</div>
+    <div class="n-right">
+      <button class="n-coach" id="coach-btn" style="display:none" onclick="toggleDashboard()">Coach View</button>
+      <button class="n-so" onclick="dso()">Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- MEMBER VIEW -->
+  <div id="member-view">
+    <div class="wrap">
+
+      <!-- GOAL CARD -->
+      <div id="goal-setup" class="goal-setup" style="display:none">
+        <div class="gs-title">Set Your Goal</div>
+        <div class="gs-sub">This will appear at the top of every reflection. Be specific — the more real it is, the more useful the reflection becomes.</div>
+        <label class="gs-label">Your Goal</label>
+        <textarea class="gs-in" id="gs-goal" placeholder="What are you building in this 12 weeks?" rows="2"></textarea>
+        <label class="gs-label">Your Why</label>
+        <textarea class="gs-in" id="gs-why" placeholder="The real reason this matters to you — go past the surface answer..." rows="3"></textarea>
+        <button class="gs-btn" onclick="saveGoal()">Save Goal →</button>
+      </div>
+
+      <div id="goal-display" class="goal-card" style="display:none">
+        <div class="gc-label">Your Goal and Why</div>
+        <div class="gc-goal" id="gc-goal-text"></div>
+        <div class="gc-why" id="gc-why-text"></div>
+        <span class="gc-edit" onclick="editGoal()">Edit goal</span>
+      </div>
+
+      <!-- REFLECTION FORM -->
+      <div id="reflection-form" style="display:none">
+        <div class="week-header">
+          <div class="wh-label">Sunday Protocol</div>
+          <div class="wh-title" id="week-title">Week Review</div>
+        </div>
+
+        <div class="field">
+          <label class="f-label">What went well this week</label>
+          <div class="f-hint">Be specific. Not just what happened — what does it say about you that it went well?</div>
+          <textarea class="f-ta" id="f-well" placeholder="The wins, however small..." rows="4"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="f-label">What I learned</label>
+          <div class="f-hint">About yourself, about the work, about what's actually going on underneath.</div>
+          <textarea class="f-ta" id="f-learned" placeholder="What shifted in your understanding this week..." rows="4"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="f-label">What could be better</label>
+          <div class="f-hint">Honest, not harsh. Where did you fall short of your own standard?</div>
+          <textarea class="f-ta" id="f-better" placeholder="The honest gaps..." rows="4"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="f-label">One mission for next week</label>
+          <div class="f-hint">Specific. Completable. Directly connected to your goal. One thing.</div>
+          <textarea class="f-ta" id="f-mission" placeholder="The one thing that matters most next week..." rows="2"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="f-label">What I want from the upcoming call</label>
+          <div class="f-hint">What do you need from Jaden and Noah this week? Be direct — this shapes the call.</div>
+          <textarea class="f-ta" id="f-call" placeholder="What would make the call most valuable for you..." rows="3"></textarea>
+        </div>
+
+        <div class="score-wrap">
+          <span class="score-label">Score This Week Out of 10</span>
+          <div class="score-btns" id="score-btns">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
+        <button class="submit-btn" id="submit-btn" onclick="submitReflection()">Get My Reflection →</button>
+
+        <!-- AI RESPONSE -->
+        <div class="ai-response" id="ai-response">
+          <div class="air-label">Your Reflection</div>
+          <div class="ai-loading" id="ai-loading" style="display:none">
+            <div class="spin-wrap">
+              <div class="spin-dot"></div>
+              <div class="spin-dot"></div>
+              <div class="spin-dot"></div>
+            </div>
+          </div>
+          <div class="air-text" id="air-text"></div>
+          <div class="air-save" id="air-save">✓ Saved to your account</div>
+        </div>
+
+        <!-- PAST REFLECTIONS -->
+        <div class="past-section" id="past-section" style="display:none">
+          <div class="ps-label">Previous Reflections</div>
+          <div id="past-list"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- COACH DASHBOARD -->
+  <div id="dashboard" style="display:none">
+    <div class="dash-wrap">
+      <div class="dash-title">Coach Dashboard</div>
+      <div class="dash-sub">All member reflections — most recent first</div>
+      <div id="dash-list">
+        <div class="spin-wrap"><div class="spin-dot"></div><div class="spin-dot"></div><div class="spin-dot"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyAg5NbLzEyTm_MnuTkq9fYfXs9FW0X5V90",
+  authDomain: "jaden-coaching.firebaseapp.com",
+  databaseURL: "https://jaden-coaching-default-rtdb.firebaseio.com",
+  projectId: "jaden-coaching",
+  storageBucket: "jaden-coaching.firebasestorage.app",
+  messagingSenderId: "394324167037",
+  appId: "1:394324167037:web:5038204ea42bd486e6a414"
+});
+var auth = firebase.auth(), db = firebase.database();
+var me = null, myData = {}, selectedScore = null, dashOpen = false;
+
+// COACH EMAILS — add Jaden and Noah's emails here
+var COACHES = ['noah@example.com', 'jaden@example.com'];
+
+auth.onAuthStateChanged(function(user) {
+  document.getElementById('ls').style.display = 'none';
+  if (user) {
+    me = user;
+    document.getElementById('au').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    if (COACHES.includes(user.email.toLowerCase())) {
+      document.getElementById('coach-btn').style.display = 'block';
+    }
+    loadUser();
+  } else {
+    me = null;
+    document.getElementById('au').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+});
+
+// AUTH
+function swTab(t) {
+  ['si','su'].forEach(function(x) {
+    document.getElementById('t-'+x).classList.toggle('on', x===t);
+    document.getElementById('f-'+x).style.display = x===t ? 'block' : 'none';
+  });
+  document.getElementById('aerr').textContent = '';
+  document.getElementById('aok').textContent = '';
+}
+function dsi() {
+  var e = document.getElementById('si-e').value.trim(), p = document.getElementById('si-p').value;
+  if (!e||!p) { document.getElementById('aerr').textContent = 'Please fill in all fields.'; return; }
+  auth.signInWithEmailAndPassword(e, p).catch(function() {
+    document.getElementById('aerr').textContent = 'Incorrect email or password.';
+  });
+}
+function dsu() {
+  var n = document.getElementById('su-n').value.trim();
+  var e = document.getElementById('su-e').value.trim();
+  var p = document.getElementById('su-p').value;
+  if (!n||!e||!p) { document.getElementById('aerr').textContent = 'Please fill in all fields.'; return; }
+  if (p.length < 6) { document.getElementById('aerr').textContent = 'Password must be at least 6 characters.'; return; }
+  auth.createUserWithEmailAndPassword(e, p).then(function(c) {
+    db.ref('gc_members/' + c.user.uid).set({ name: n, email: e, joinedAt: Date.now() });
+  }).catch(function(err) {
+    document.getElementById('aerr').textContent = err.code === 'auth/email-already-in-use' ? 'Account exists — please sign in.' : err.message;
+  });
+}
+function rpw() {
+  var e = document.getElementById('si-e').value.trim();
+  if (!e) { document.getElementById('aerr').textContent = 'Enter your email above first.'; return; }
+  auth.sendPasswordResetEmail(e).then(function() {
+    document.getElementById('aok').textContent = 'Reset email sent. Check your inbox.';
+  }).catch(function() {
+    document.getElementById('aerr').textContent = 'Could not send reset email.';
+  });
+}
+function dso() { auth.signOut(); }
+
+function loadUser() {
+  db.ref('gc_members/' + me.uid).once('value').then(function(snap) {
+    myData = snap.val() || {};
+    if (!myData.name) {
+      myData.name = me.email.split('@')[0];
+    }
+    if (myData.goal) {
+      showGoalDisplay();
+    } else {
+      document.getElementById('goal-setup').style.display = 'block';
+    }
+    renderScoreButtons();
+    loadPastReflections();
+  });
+}
+
+function saveGoal() {
+  var goal = document.getElementById('gs-goal').value.trim();
+  var why = document.getElementById('gs-why').value.trim();
+  if (!goal || !why) { showToast('Please fill in both fields.'); return; }
+  db.ref('gc_members/' + me.uid).update({ goal: goal, why: why });
+  myData.goal = goal; myData.why = why;
+  showGoalDisplay();
+}
+
+function showGoalDisplay() {
+  document.getElementById('goal-setup').style.display = 'none';
+  document.getElementById('goal-display').style.display = 'block';
+  document.getElementById('reflection-form').style.display = 'block';
+  document.getElementById('gc-goal-text').textContent = myData.goal || '';
+  document.getElementById('gc-why-text').textContent = myData.why || '';
+  var now = new Date();
+  var weekNum = getWeekNumber(now);
+  document.getElementById('week-title').textContent = 'Week ' + weekNum + ' Review — ' + now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function editGoal() {
+  document.getElementById('gs-goal').value = myData.goal || '';
+  document.getElementById('gs-why').value = myData.why || '';
+  document.getElementById('goal-display').style.display = 'none';
+  document.getElementById('reflection-form').style.display = 'none';
+  document.getElementById('goal-setup').style.display = 'block';
+}
+
+function renderScoreButtons() {
+  var html = '';
+  for (var i = 1; i <= 10; i++) {
+    html += '<button class="s-btn' + (selectedScore === i ? ' sel' : '') + '" onclick="selectScore(' + i + ')">' + i + '</button>';
+  }
+  document.getElementById('score-btns').innerHTML = html;
+}
+
+function selectScore(n) {
+  selectedScore = n;
+  renderScoreButtons();
+}
+
+async function submitReflection() {
+  var well = document.getElementById('f-well').value.trim();
+  var learned = document.getElementById('f-learned').value.trim();
+  var better = document.getElementById('f-better').value.trim();
+  var mission = document.getElementById('f-mission').value.trim();
+  var callWant = document.getElementById('f-call').value.trim();
+  if (!well || !learned || !better || !mission || !callWant) {
+    showToast('Please fill in all reflection fields.'); return;
+  }
+  if (!selectedScore) { showToast('Please score your week.'); return; }
+
+  var btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Getting your reflection...';
+
+  var aiBox = document.getElementById('ai-response');
+  aiBox.style.display = 'block';
+  document.getElementById('ai-loading').style.display = 'block';
+  document.getElementById('air-text').textContent = '';
+  aiBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    var res = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        goal: myData.goal, why: myData.why,
+        wentWell: well, learned: learned, better: better,
+        mission: mission, callWant: callWant, score: selectedScore
+      })
+    });
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    document.getElementById('ai-loading').style.display = 'none';
+    document.getElementById('air-text').textContent = data.reflection;
+
+    // Save to Firebase
+    var entry = {
+      name: myData.name || me.email.split('@')[0],
+      email: me.email,
+      weekOf: new Date().toISOString().split('T')[0],
+      score: selectedScore,
+      wentWell: well, learned: learned, better: better,
+      mission: mission, callWant: callWant,
+      aiReflection: data.reflection,
+      createdAt: Date.now()
+    };
+    var ref = db.ref('gc_reflections/' + me.uid).push(entry);
+    document.getElementById('air-save').classList.add('show');
+    loadPastReflections();
+
+  } catch(e) {
+    document.getElementById('ai-loading').style.display = 'none';
+    document.getElementById('air-text').textContent = 'Could not get reflection. Please check your connection and try again.';
+    console.error(e);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Get My Reflection →';
+}
+
+function loadPastReflections() {
+  db.ref('gc_reflections/' + me.uid).orderByChild('createdAt').limitToLast(10).once('value').then(function(snap) {
+    var entries = [];
+    snap.forEach(function(c) { entries.push(Object.assign({ key: c.key }, c.val())); });
+    entries.reverse();
+    if (!entries.length) return;
+    document.getElementById('past-section').style.display = 'block';
+    var html = entries.map(function(e) {
+      var d = new Date(e.createdAt);
+      var dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      return '<div class="past-item" onclick="toggleEntry(\'' + e.key + '\')">' +
+        '<div class="pi-top"><span class="pi-date">' + dateStr + '</span><span class="pi-score">' + e.score + '/10</span></div>' +
+        '<div class="pi-preview">' + (e.wentWell || '').substring(0, 100) + '...</div>' +
+        '</div>' +
+        '<div class="past-detail" id="entry-' + e.key + '">' +
+          '<div class="pd-field"><div class="pd-label">What went well</div><div class="pd-val">' + (e.wentWell||'') + '</div></div>' +
+          '<div class="pd-field"><div class="pd-label">What I learned</div><div class="pd-val">' + (e.learned||'') + '</div></div>' +
+          '<div class="pd-field"><div class="pd-label">What could be better</div><div class="pd-val">' + (e.better||'') + '</div></div>' +
+          '<div class="pd-field"><div class="pd-label">Mission next week</div><div class="pd-val">' + (e.mission||'') + '</div></div>' +
+          '<div class="pd-field"><div class="pd-label">What I want from the call</div><div class="pd-val">' + (e.callWant||'') + '</div></div>' +
+          (e.aiReflection ? '<div class="pd-ai"><div class="pd-ai-label">AI Reflection</div><div class="pd-ai-text">' + e.aiReflection + '</div></div>' : '') +
+        '</div>';
+    }).join('');
+    document.getElementById('past-list').innerHTML = html;
+  });
+}
+
+function toggleEntry(key) {
+  var el = document.getElementById('entry-' + key);
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+function toggleDashboard() {
+  dashOpen = !dashOpen;
+  document.getElementById('member-view').style.display = dashOpen ? 'none' : 'block';
+  document.getElementById('dashboard').style.display = dashOpen ? 'block' : 'none';
+  document.getElementById('coach-btn').textContent = dashOpen ? 'My Reflection' : 'Coach View';
+  if (dashOpen) loadDashboard();
+}
+
+function loadDashboard() {
+  db.ref('gc_reflections').once('value').then(function(snap) {
+    var byUser = {};
+    snap.forEach(function(userSnap) {
+      var uid = userSnap.key;
+      userSnap.forEach(function(entry) {
+        if (!byUser[uid]) byUser[uid] = [];
+        byUser[uid].push(Object.assign({ key: entry.key }, entry.val()));
+      });
+    });
+    if (!Object.keys(byUser).length) {
+      document.getElementById('dash-list').innerHTML = '<div style="padding:40px;text-align:center;font-family:\'DM Mono\',monospace;font-size:10px;color:var(--dim);letter-spacing:0.3em;text-transform:uppercase;">No reflections yet</div>';
+      return;
+    }
+    var html = '';
+    Object.keys(byUser).forEach(function(uid) {
+      var entries = byUser[uid].sort(function(a,b) { return b.createdAt - a.createdAt; });
+      var latest = entries[0];
+      var name = latest.name || latest.email || uid;
+      var avgScore = (entries.reduce(function(s,e) { return s + (e.score||0); }, 0) / entries.length).toFixed(1);
+      html += '<div class="member-card"><div class="mc-header" onclick="toggleMember(\'' + uid + '\')">';
+      html += '<div class="mc-av">' + name[0].toUpperCase() + '</div>';
+      html += '<div class="mc-info"><div class="mc-name">' + name + '</div><div class="mc-meta">' + entries.length + ' reflection' + (entries.length!==1?'s':'') + ' · avg ' + avgScore + '/10</div></div>';
+      html += '<div class="mc-score">' + (latest.score||'-') + '</div></div>';
+      html += '<div class="mc-entries" id="member-' + uid + '">';
+      entries.forEach(function(e) {
+        var d = new Date(e.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        html += '<div class="entry-row">';
+        html += '<div class="er-top"><span class="er-date">' + d + '</span><span class="er-score">' + (e.score||'-') + '/10</span></div>';
+        if(e.wentWell) html += '<div class="er-field"><div class="er-lbl">Went well</div><div class="er-val">' + e.wentWell + '</div></div>';
+        if(e.learned) html += '<div class="er-field"><div class="er-lbl">Learned</div><div class="er-val">' + e.learned + '</div></div>';
+        if(e.better) html += '<div class="er-field"><div class="er-lbl">Could be better</div><div class="er-val">' + e.better + '</div></div>';
+        if(e.mission) html += '<div class="er-field"><div class="er-lbl">Mission next week</div><div class="er-val">' + e.mission + '</div></div>';
+        if(e.callWant) html += '<div class="er-field"><div class="er-lbl">Wants from call</div><div class="er-val">' + e.callWant + '</div></div>';
+        if(e.aiReflection) html += '<div class="er-ai"><div class="er-ai-lbl">AI Reflection delivered</div><div class="er-ai-txt">' + e.aiReflection + '</div></div>';
+        html += '</div>';
+      });
+      html += '</div></div>';
+    });
+    document.getElementById('dash-list').innerHTML = html;
+  });
+}
+
+function toggleMember(uid) {
+  var el = document.getElementById('member-' + uid);
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+function getWeekNumber(d) {
+  var onejan = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil((((d - onejan) / 86400000) + onejan.getDay() + 1) / 7);
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+</script>
+</body>
+</html>
